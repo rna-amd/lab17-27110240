@@ -244,6 +244,17 @@
       color: var(--green);
     }
 
+    .budget-control {
+      display: flex;
+      justify-content: flex-end;
+      padding: 0 24px 24px;
+    }
+
+    .budget-field {
+      width: min(100%, 340px);
+      margin: 0;
+    }
+
     .results {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -257,6 +268,16 @@
 
     .result + .result {
       border-left: 1px solid var(--line);
+    }
+
+    .result.budget-result {
+      grid-column: 1 / -1;
+      border-top: 1px solid var(--line);
+      border-left: 0;
+    }
+
+    .result[hidden] {
+      display: none;
     }
 
     .result h2 {
@@ -307,6 +328,10 @@
       .shelf {
         gap: 14px;
         padding: 16px;
+      }
+
+      .budget-control {
+        padding: 0 16px 18px;
       }
 
       .pack {
@@ -403,6 +428,17 @@
         </article>
       </div>
 
+      <div class="budget-control">
+        <div class="field budget-field">
+          <label for="budget">Optional shopper budget</label>
+          <div class="input-wrap">
+            <span class="prefix" aria-hidden="true">Rs</span>
+            <input id="budget" type="number" min="0" step="any" inputmode="decimal" aria-describedby="budget-error">
+          </div>
+          <p class="error" id="budget-error"></p>
+        </div>
+      </div>
+
       <div class="results" aria-live="polite" aria-atomic="true">
         <section class="result" aria-labelledby="purchase-heading">
           <h2 id="purchase-heading">Upfront pack price</h2>
@@ -411,6 +447,10 @@
         <section class="result" aria-labelledby="unit-heading">
           <h2 id="unit-heading">Unit price</h2>
           <p id="unit-result"></p>
+        </section>
+        <section class="result budget-result" id="budget-result-section" aria-labelledby="budget-heading" hidden>
+          <h2 id="budget-heading">Packs within your budget</h2>
+          <p id="budget-result"></p>
         </section>
       </div>
     </section>
@@ -432,6 +472,10 @@
     };
     const purchaseResult = document.getElementById("purchase-result");
     const unitResult = document.getElementById("unit-result");
+    const budgetField = document.getElementById("budget");
+    const budgetError = document.getElementById("budget-error");
+    const budgetResultSection = document.getElementById("budget-result-section");
+    const budgetResult = document.getElementById("budget-result");
     const modeInputs = document.querySelectorAll('input[name="mode"]');
 
     function formatRupees(amount, decimals = 2) {
@@ -464,12 +508,23 @@
       element.append(name, document.createTextNode(` has the lower ${description} by ${formatRupees(difference)}${unit}.`));
     }
 
+    function clearBudgetResult() {
+      budgetResult.textContent = "";
+      budgetResultSection.hidden = true;
+    }
+
     function update() {
       const mode = document.querySelector('input[name="mode"]:checked').value;
       const unitName = mode === "g" ? "g" : "ml";
       document.querySelectorAll(".size-unit, .unit-label").forEach((element) => {
         element.textContent = unitName;
       });
+
+      const budgetValue = budgetField.valueAsNumber;
+      const budgetIsBlank = budgetField.value === "";
+      const budgetIsInvalid = !budgetIsBlank && (!Number.isFinite(budgetValue) || budgetValue < 0);
+      budgetError.textContent = budgetIsInvalid ? "Enter a budget of 0 or more." : "";
+      budgetField.setAttribute("aria-invalid", String(budgetIsInvalid));
 
       const values = {};
       let invalid = false;
@@ -489,6 +544,7 @@
       if (invalid) {
         purchaseResult.textContent = "Enter valid pack prices and sizes to compare upfront prices.";
         unitResult.textContent = `Enter valid pack prices and sizes to compare price per 100 ${unitName}.`;
+        clearBudgetResult();
         return;
       }
 
@@ -512,12 +568,30 @@
         "unit price",
         ` per 100 ${unitName}`
       );
+
+      if (budgetIsBlank || budgetIsInvalid) {
+        clearBudgetResult();
+      } else {
+        const fitsA = values.a.price <= budgetValue;
+        const fitsB = values.b.price <= budgetValue;
+        if (fitsA && fitsB) {
+          budgetResult.textContent = "Both packs fit your budget by purchase price.";
+        } else if (fitsA) {
+          budgetResult.textContent = "Pack A fits your budget by purchase price; Pack B does not.";
+        } else if (fitsB) {
+          budgetResult.textContent = "Pack B fits your budget by purchase price; Pack A does not.";
+        } else {
+          budgetResult.textContent = "Neither pack fits your budget by purchase price.";
+        }
+        budgetResultSection.hidden = false;
+      }
     }
 
     Object.values(packFields).forEach(({ price, size }) => {
       price.addEventListener("input", update);
       size.addEventListener("input", update);
     });
+    budgetField.addEventListener("input", update);
     modeInputs.forEach((input) => input.addEventListener("change", update));
 
     update();
