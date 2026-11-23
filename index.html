@@ -1,0 +1,526 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#FAF7EE">
+  <title>Shelf Math — Which pack is the better buy?</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #FAF7EE;
+      --ink: #20251F;
+      --label: #FFFFFF;
+      --green: #215C3C;
+      --muted: #656B62;
+      --line: #D9D5C9;
+      --error: #A33125;
+      --shadow: 0 12px 30px rgb(32 37 31 / 7%);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      background:
+        radial-gradient(ellipse at 50% -20%, #fffdf7 0, transparent 56%),
+        var(--paper);
+      color: var(--ink);
+      font-family: Arial, sans-serif;
+    }
+
+    main {
+      width: min(100% - 40px, 920px);
+      margin: 0 auto;
+      padding: 68px 0 48px;
+    }
+
+    .masthead {
+      margin-bottom: 34px;
+      text-align: center;
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--green);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-family: Georgia, serif;
+      font-size: clamp(2.8rem, 8vw, 4.5rem);
+      font-weight: 400;
+      letter-spacing: -0.055em;
+      line-height: 1;
+    }
+
+    .tagline {
+      margin: 15px 0 0;
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+
+    .comparison {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: rgb(255 255 255 / 48%);
+      box-shadow: var(--shadow);
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .controls p {
+      margin: 0;
+      font-size: 0.92rem;
+      font-weight: 700;
+    }
+
+    .mode-switch {
+      display: inline-flex;
+      gap: 3px;
+      padding: 4px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--paper);
+    }
+
+    .mode-switch label {
+      position: relative;
+      cursor: pointer;
+    }
+
+    .mode-switch input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+    }
+
+    .mode-switch span {
+      display: block;
+      padding: 9px 14px;
+      border-radius: 999px;
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .mode-switch input:checked + span {
+      background: var(--ink);
+      color: var(--label);
+    }
+
+    .mode-switch input:focus-visible + span {
+      outline: 3px solid #78A889;
+      outline-offset: 3px;
+    }
+
+    .shelf {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      padding: 24px;
+    }
+
+    .pack {
+      min-width: 0;
+      padding: 22px;
+      border: 1px solid #E8E4DA;
+      border-radius: 14px;
+      background: var(--label);
+    }
+
+    .pack-heading {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .pack h2 {
+      margin: 0;
+      font-size: 1.25rem;
+    }
+
+    .pack-note {
+      color: var(--muted);
+      font-size: 0.76rem;
+    }
+
+    .field {
+      margin-bottom: 18px;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 7px;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+
+    .input-wrap {
+      display: flex;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .input-wrap:focus-within {
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgb(33 92 60 / 12%);
+    }
+
+    .prefix,
+    .suffix {
+      flex: 0 0 auto;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .prefix {
+      padding-left: 12px;
+    }
+
+    .suffix {
+      padding-right: 12px;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      min-width: 0;
+      padding: 12px 10px;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--ink);
+      font: 700 1rem Arial, sans-serif;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .error {
+      min-height: 1.1em;
+      margin: 5px 0 0;
+      color: var(--error);
+      font-size: 0.77rem;
+    }
+
+    .unit-price {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 21px;
+      padding-top: 16px;
+      border-top: 1px dashed var(--line);
+      font-size: 0.84rem;
+    }
+
+    .unit-price strong {
+      color: var(--muted);
+      font-size: 1.13rem;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .unit-price strong.is-lower {
+      color: var(--green);
+    }
+
+    .results {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      border-top: 1px solid var(--line);
+      background: #F4F1E8;
+    }
+
+    .result {
+      padding: 21px 24px 23px;
+    }
+
+    .result + .result {
+      border-left: 1px solid var(--line);
+    }
+
+    .result h2 {
+      margin: 0 0 9px;
+      color: var(--muted);
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .result p {
+      margin: 0;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .winner {
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    .hint {
+      margin: 15px 0 0;
+      color: var(--muted);
+      font-size: 0.82rem;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    @media (max-width: 620px) {
+      main {
+        width: min(100% - 28px, 470px);
+        padding-top: 44px;
+      }
+
+      .controls {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 12px;
+        padding: 18px;
+      }
+
+      .shelf,
+      .results {
+        grid-template-columns: 1fr;
+      }
+
+      .shelf {
+        gap: 14px;
+        padding: 16px;
+      }
+
+      .pack {
+        padding: 18px;
+      }
+
+      .result {
+        padding: 18px;
+      }
+
+      .result + .result {
+        border-top: 1px solid var(--line);
+        border-left: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header class="masthead">
+      <p class="eyebrow">A little clarity for the grocery aisle</p>
+      <h1>Shelf Math</h1>
+      <p class="tagline">Which pack is the better buy?</p>
+    </header>
+
+    <section class="comparison" aria-label="Compare two packs">
+      <div class="controls">
+        <p>What are you comparing?</p>
+        <div class="mode-switch" role="radiogroup" aria-label="Pack size type">
+          <label>
+            <input type="radio" name="mode" value="g" checked>
+            <span>Weight (g)</span>
+          </label>
+          <label>
+            <input type="radio" name="mode" value="ml">
+            <span>Volume (ml)</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="shelf">
+        <article class="pack" aria-labelledby="pack-a-title">
+          <div class="pack-heading">
+            <h2 id="pack-a-title">Pack A</h2>
+            <span class="pack-note">Shelf label</span>
+          </div>
+          <div class="field">
+            <label for="price-a">Pack price</label>
+            <div class="input-wrap">
+              <span class="prefix" aria-hidden="true">Rs</span>
+              <input id="price-a" type="number" min="0" step="any" value="240" inputmode="decimal" aria-describedby="price-a-error">
+            </div>
+            <p class="error" id="price-a-error"></p>
+          </div>
+          <div class="field">
+            <label for="size-a">Pack size</label>
+            <div class="input-wrap">
+              <input id="size-a" type="number" min="0" step="any" value="250" inputmode="decimal" aria-describedby="size-a-error">
+              <span class="suffix size-unit">g</span>
+            </div>
+            <p class="error" id="size-a-error"></p>
+          </div>
+          <div class="unit-price">
+            <span>Price per 100 <span class="unit-label">g</span></span>
+            <strong id="unit-a">—</strong>
+          </div>
+        </article>
+
+        <article class="pack" aria-labelledby="pack-b-title">
+          <div class="pack-heading">
+            <h2 id="pack-b-title">Pack B</h2>
+            <span class="pack-note">Shelf label</span>
+          </div>
+          <div class="field">
+            <label for="price-b">Pack price</label>
+            <div class="input-wrap">
+              <span class="prefix" aria-hidden="true">Rs</span>
+              <input id="price-b" type="number" min="0" step="any" value="430" inputmode="decimal" aria-describedby="price-b-error">
+            </div>
+            <p class="error" id="price-b-error"></p>
+          </div>
+          <div class="field">
+            <label for="size-b">Pack size</label>
+            <div class="input-wrap">
+              <input id="size-b" type="number" min="0" step="any" value="500" inputmode="decimal" aria-describedby="size-b-error">
+              <span class="suffix size-unit">g</span>
+            </div>
+            <p class="error" id="size-b-error"></p>
+          </div>
+          <div class="unit-price">
+            <span>Price per 100 <span class="unit-label">g</span></span>
+            <strong id="unit-b">—</strong>
+          </div>
+        </article>
+      </div>
+
+      <div class="results" aria-live="polite" aria-atomic="true">
+        <section class="result" aria-labelledby="purchase-heading">
+          <h2 id="purchase-heading">Upfront pack price</h2>
+          <p id="purchase-result"></p>
+        </section>
+        <section class="result" aria-labelledby="unit-heading">
+          <h2 id="unit-heading">Unit price</h2>
+          <p id="unit-result"></p>
+        </section>
+      </div>
+    </section>
+    <p class="hint">Compare the pack price you pay today and the price per 100 <span class="unit-label">g</span> to see which size gives you more for your money.</p>
+  </main>
+
+  <script>
+    const packFields = {
+      a: {
+        price: document.getElementById("price-a"),
+        size: document.getElementById("size-a"),
+        unitPrice: document.getElementById("unit-a")
+      },
+      b: {
+        price: document.getElementById("price-b"),
+        size: document.getElementById("size-b"),
+        unitPrice: document.getElementById("unit-b")
+      }
+    };
+    const purchaseResult = document.getElementById("purchase-result");
+    const unitResult = document.getElementById("unit-result");
+    const modeInputs = document.querySelectorAll('input[name="mode"]');
+
+    function formatRupees(amount, decimals = 2) {
+      const rounded = Number(amount.toFixed(decimals));
+      return `Rs ${rounded.toLocaleString("en-PK", {
+        minimumFractionDigits: Number.isInteger(rounded) ? 0 : 2,
+        maximumFractionDigits: decimals
+      })}`;
+    }
+
+    function validate(field, label) {
+      const value = field.valueAsNumber;
+      const error = document.getElementById(`${field.id}-error`);
+      const invalid = !Number.isFinite(value) || value <= 0;
+      error.textContent = invalid ? `Enter a ${label} greater than 0.` : "";
+      field.setAttribute("aria-invalid", String(invalid));
+      return invalid ? null : value;
+    }
+
+    function setResult(element, winner, difference, description, unit = "") {
+      element.replaceChildren();
+      if (winner === "tie") {
+        element.textContent = `Both packs have the same ${description}.`;
+        return;
+      }
+
+      const name = document.createElement("strong");
+      name.className = "winner";
+      name.textContent = `Pack ${winner.toUpperCase()}`;
+      element.append(name, document.createTextNode(` has the lower ${description} by ${formatRupees(difference)}${unit}.`));
+    }
+
+    function update() {
+      const mode = document.querySelector('input[name="mode"]:checked').value;
+      const unitName = mode === "g" ? "g" : "ml";
+      document.querySelectorAll(".size-unit, .unit-label").forEach((element) => {
+        element.textContent = unitName;
+      });
+
+      const values = {};
+      let invalid = false;
+      for (const [key, fields] of Object.entries(packFields)) {
+        const price = validate(fields.price, "pack price");
+        const size = validate(fields.size, "pack size");
+        fields.unitPrice.classList.toggle("is-lower", false);
+        if (price === null || size === null) {
+          invalid = true;
+          fields.unitPrice.textContent = "—";
+        } else {
+          values[key] = { price, size, unitPrice: price / size * 100 };
+          fields.unitPrice.textContent = `${formatRupees(values[key].unitPrice)} / 100 ${unitName}`;
+        }
+      }
+
+      if (invalid) {
+        purchaseResult.textContent = "Enter valid pack prices and sizes to compare upfront prices.";
+        unitResult.textContent = `Enter valid pack prices and sizes to compare price per 100 ${unitName}.`;
+        return;
+      }
+
+      const priceDifference = Math.abs(values.a.price - values.b.price);
+      setResult(
+        purchaseResult,
+        values.a.price === values.b.price ? "tie" : values.a.price < values.b.price ? "a" : "b",
+        priceDifference,
+        "purchase price"
+      );
+
+      const unitDifference = Math.abs(values.a.unitPrice - values.b.unitPrice);
+      if (values.a.unitPrice !== values.b.unitPrice) {
+        const lowerPack = values.a.unitPrice < values.b.unitPrice ? "a" : "b";
+        packFields[lowerPack].unitPrice.classList.toggle("is-lower", true);
+      }
+      setResult(
+        unitResult,
+        values.a.unitPrice === values.b.unitPrice ? "tie" : values.a.unitPrice < values.b.unitPrice ? "a" : "b",
+        unitDifference,
+        "unit price",
+        ` per 100 ${unitName}`
+      );
+    }
+
+    Object.values(packFields).forEach(({ price, size }) => {
+      price.addEventListener("input", update);
+      size.addEventListener("input", update);
+    });
+    modeInputs.forEach((input) => input.addEventListener("change", update));
+
+    update();
+  </script>
+</body>
+</html>
