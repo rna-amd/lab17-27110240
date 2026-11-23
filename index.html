@@ -44,15 +44,6 @@
       text-align: center;
     }
 
-    .eyebrow {
-      margin: 0 0 10px;
-      color: var(--green);
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-    }
-
     h1 {
       margin: 0;
       font-family: Georgia, serif;
@@ -91,6 +82,14 @@
       font-weight: 700;
     }
 
+    .control-actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
     .mode-switch {
       display: inline-flex;
       gap: 3px;
@@ -127,6 +126,25 @@
     }
 
     .mode-switch input:focus-visible + span {
+      outline: 3px solid #78A889;
+      outline-offset: 3px;
+    }
+
+    .reset-button {
+      padding: 10px 14px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--label);
+      color: var(--ink);
+      font: 700 0.85rem Arial, sans-serif;
+      cursor: pointer;
+    }
+
+    .reset-button:hover {
+      border-color: var(--green);
+    }
+
+    .reset-button:focus-visible {
       outline: 3px solid #78A889;
       outline-offset: 3px;
     }
@@ -362,7 +380,6 @@
 <body>
   <main>
     <header class="masthead">
-      <p class="eyebrow">A little clarity for the grocery aisle</p>
       <h1>Shelf Math</h1>
       <p class="tagline">Which pack is the better buy?</p>
     </header>
@@ -370,15 +387,18 @@
     <section class="comparison" aria-label="Compare two packs">
       <div class="controls">
         <p>What are you comparing?</p>
-        <div class="mode-switch" role="radiogroup" aria-label="Pack size type">
-          <label>
-            <input type="radio" name="mode" value="g" checked>
-            <span>Weight (g)</span>
-          </label>
-          <label>
-            <input type="radio" name="mode" value="ml">
-            <span>Volume (ml)</span>
-          </label>
+        <div class="control-actions">
+          <div class="mode-switch" role="radiogroup" aria-label="Pack size type">
+            <label>
+              <input type="radio" name="mode" value="g" checked>
+              <span>Weight (g)</span>
+            </label>
+            <label>
+              <input type="radio" name="mode" value="ml">
+              <span>Volume (ml)</span>
+            </label>
+          </div>
+          <button class="reset-button" id="reset-example" type="button">Reset to example</button>
         </div>
       </div>
 
@@ -494,6 +514,7 @@
     const budgetError = document.getElementById("budget-error");
     const budgetResultSection = document.getElementById("budget-result-section");
     const budgetResult = document.getElementById("budget-result");
+    const resetButton = document.getElementById("reset-example");
     const modeInputs = document.querySelectorAll('input[name="mode"]');
 
     function formatRupees(amount, decimals = 2) {
@@ -630,6 +651,18 @@
       setSizeUnits(input.value);
       update();
     }));
+    resetButton.addEventListener("click", () => {
+      modeInputs.forEach((input) => {
+        input.checked = input.value === "g";
+      });
+      setSizeUnits("g");
+      packFields.a.price.value = "240";
+      packFields.a.size.value = "250";
+      packFields.b.price.value = "430";
+      packFields.b.size.value = "500";
+      budgetField.value = "";
+      update();
+    });
 
     update();
   </script>
