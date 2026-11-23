@@ -215,6 +215,16 @@
       font-variant-numeric: tabular-nums;
     }
 
+    .unit-select {
+      flex: 0 0 auto;
+      padding: 12px 12px 12px 6px;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--ink);
+      font: 700 0.9rem Arial, sans-serif;
+    }
+
     .error {
       min-height: 1.1em;
       margin: 5px 0 0;
@@ -390,7 +400,10 @@
             <label for="size-a">Pack size</label>
             <div class="input-wrap">
               <input id="size-a" type="number" min="0" step="any" value="250" inputmode="decimal" aria-describedby="size-a-error">
-              <span class="suffix size-unit">g</span>
+              <select id="size-unit-a" class="unit-select" aria-label="Pack A size unit">
+                <option value="g">g</option>
+                <option value="kg">kg</option>
+              </select>
             </div>
             <p class="error" id="size-a-error"></p>
           </div>
@@ -417,7 +430,10 @@
             <label for="size-b">Pack size</label>
             <div class="input-wrap">
               <input id="size-b" type="number" min="0" step="any" value="500" inputmode="decimal" aria-describedby="size-b-error">
-              <span class="suffix size-unit">g</span>
+              <select id="size-unit-b" class="unit-select" aria-label="Pack B size unit">
+                <option value="g">g</option>
+                <option value="kg">kg</option>
+              </select>
             </div>
             <p class="error" id="size-b-error"></p>
           </div>
@@ -462,11 +478,13 @@
       a: {
         price: document.getElementById("price-a"),
         size: document.getElementById("size-a"),
+        sizeUnit: document.getElementById("size-unit-a"),
         unitPrice: document.getElementById("unit-a")
       },
       b: {
         price: document.getElementById("price-b"),
         size: document.getElementById("size-b"),
+        sizeUnit: document.getElementById("size-unit-b"),
         unitPrice: document.getElementById("unit-b")
       }
     };
@@ -513,10 +531,24 @@
       budgetResultSection.hidden = true;
     }
 
+    function setSizeUnits(mode) {
+      const options = mode === "g" ? ["g", "kg"] : ["ml", "L"];
+      const baseUnit = options[0];
+      Object.values(packFields).forEach(({ sizeUnit }) => {
+        sizeUnit.replaceChildren(...options.map((unit) => {
+          const option = document.createElement("option");
+          option.value = unit;
+          option.textContent = unit;
+          return option;
+        }));
+        sizeUnit.value = baseUnit;
+      });
+    }
+
     function update() {
       const mode = document.querySelector('input[name="mode"]:checked').value;
       const unitName = mode === "g" ? "g" : "ml";
-      document.querySelectorAll(".size-unit, .unit-label").forEach((element) => {
+      document.querySelectorAll(".unit-label").forEach((element) => {
         element.textContent = unitName;
       });
 
@@ -536,7 +568,8 @@
           invalid = true;
           fields.unitPrice.textContent = "—";
         } else {
-          values[key] = { price, size, unitPrice: price / size * 100 };
+          const sizeInBaseUnits = size * (fields.sizeUnit.value === "kg" || fields.sizeUnit.value === "L" ? 1000 : 1);
+          values[key] = { price, size, unitPrice: price / sizeInBaseUnits * 100 };
           fields.unitPrice.textContent = `${formatRupees(values[key].unitPrice)} / 100 ${unitName}`;
         }
       }
@@ -587,12 +620,16 @@
       }
     }
 
-    Object.values(packFields).forEach(({ price, size }) => {
+    Object.values(packFields).forEach(({ price, size, sizeUnit }) => {
       price.addEventListener("input", update);
       size.addEventListener("input", update);
+      sizeUnit.addEventListener("change", update);
     });
     budgetField.addEventListener("input", update);
-    modeInputs.forEach((input) => input.addEventListener("change", update));
+    modeInputs.forEach((input) => input.addEventListener("change", () => {
+      setSizeUnits(input.value);
+      update();
+    }));
 
     update();
   </script>
